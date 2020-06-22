@@ -1,0 +1,16 @@
+{
+  "name": "tcp-server",
+  "version": "1.0.0",
+  "description": "Tcp server for Davix upload",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Ashirafu Miiro",
+  "license": "MIT",
+  "dependencies": {
+    "json-duplex-stream": "^1.2.0",
+    "amqplib": "^0.3.0"
+  }
+}
