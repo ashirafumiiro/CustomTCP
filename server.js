@@ -1,32 +1,66 @@
-var net = require('net');
-var server = net.createServer();
-var JSONDuplexStream = require('json-duplex-stream');
+const net = require('net');
+const amqp = require('amqplib/callback_api');
 
-var Gateway = require('./gateway')
+const port = 7070;
+const host = '127.0.0.1';
 
-server.on('connection', handleConnection);
-server.listen(8000, function () {
-    console.log('server listening on %j', server.address());
+
+const server = net.createServer();
+server.listen(port, host, () => {
+    console.log('TCP Server is running on port ' + port + '.');
 });
 
-function handleConnection(conn) {
-    var s = JSONDuplexStream();
-    var gateway = Gateway();
-    conn.
-        pipe(s.in).
-        pipe(gateway).
-        pipe(s.out).
-        pipe(conn);
 
-    s.in.on('error', onProtocolError);
-    s.out.on('error', onProtocolError);
-    conn.on('error', onConnError);
+server.on('connection', function (sock) {
+    let buffered = "";
+    console.log('CONNECTED: ' + sock.remoteAddress + ':' + sock.remotePort);
 
-    function onProtocolError(err) {
-        conn.end('protocol error:' + err.message);
-    }
-}
+    sock.on('data', function (data) {
+        buffered += data;
 
-function onConnError(err) {
-    console.error('connection error:', err.stack);
+        // Wait untill a new line is received to signify completion
+        (function processReceived() {
+            let splitter = '\n'
+            var received = buffered.split(splitter);
+            while (received.length > 1) {
+                // console.log("Completed", received[0]);
+                addMessageToQueue(received[0]);
+                // Fully received. inform Device that complition is reached.
+                sock.write("REC\n");
+                // Send to queue for later processing.
+
+                buffered = received.slice(1).join(splitter);
+                received = buffered.split(splitter);
+            }
+        })();
+    });
+
+    // Add a 'close' event handler to this instance of socket
+    sock.on('close', function (data) {
+        console.log('CLOSED: ' + sock.remoteAddress + ' ' + sock.remotePort);
+    });
+});
+
+function addMessageToQueue(msg) {
+    amqp.connect('amqp://localhost', function (error0, connection) {
+        if (error0) {
+            throw error0;
+        }
+        connection.createChannel(function (error1, channel) {
+            if (error1) {
+                throw error1;
+            }
+            const queue = 'device_logs';
+
+            channel.assertQueue(queue, {
+                durable: false
+            });
+
+            channel.sendToQueue(queue, Buffer.from(msg));
+            console.log(" [x] Sent %s", msg);
+        });
+        setTimeout(function () {
+            connection.close();
+        }, 500);
+    });
 }
