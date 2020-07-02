@@ -7,6 +7,6 @@ Timing is implemented by the device as the server will allow devices with very p
 ## Server implementation
 * The file [server.js](./server.js) contains the proram that is used to run the TCP server and this interacts directly with the Davix.  
 After the Data is received, it is added to the message queue and the Davix sends a response `REC` to notify the device that it can now send another log.
-* [message_processor.js](./message_processor.js) is a message consumer and this receives the messages and converts them to JavaScript objects, which can be send via an API or, as text through any protocal.
+* [message_processor.js](./message_processor.js) is a message consumer and this receives the messages and converts them to JavaScript objects, which can be sent via an API or, as text through any protocal.
 
 

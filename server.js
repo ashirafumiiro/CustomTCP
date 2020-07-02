@@ -21,14 +21,14 @@ server.on('connection', function (sock) {
         // Wait untill a new line is received to signify completion
         (function processReceived() {
             let splitter = '\n'
-            var received = buffered.split(splitter);
+            let received = buffered.split(splitter);
             while (received.length > 1) {
                 // console.log("Completed", received[0]);
-                addMessageToQueue(received[0]);
-                // Fully received. inform Device that complition is reached.
-                sock.write("REC\n");
                 // Send to queue for later processing.
-
+                addMessageToQueue(received[0]);
+                // Fully received. inform Device that completion is reached.
+                sock.write("REC\n");
+                // Remove from buffer and continue receiving
                 buffered = received.slice(1).join(splitter);
                 received = buffered.split(splitter);
             }
